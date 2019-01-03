@@ -315,6 +315,13 @@ Discourse::Application.routes.draw do
     end
   end
 
+  get "review" => "reviewables#index" # For ember app
+  put "review/:reviewable_id/perform/:action_id" => "reviewables#perform", constraints: {
+    reviewable_id: /\d+/,
+    action_id: /[a-z\_]+/
+  }
+  put "review/:reviewable_id" => "reviewables#update", constraints: { reviewable_id: /\d+/ }
+
   get "session/sso" => "session#sso"
   get "session/sso_login" => "session#sso_login"
   get "session/sso_provider" => "session#sso_provider"

@@ -124,48 +124,19 @@ describe User do
     end
   end
 
-  describe '.approve' do
+  describe 'reviewable' do
     let(:user) { Fabricate(:user) }
     let(:admin) { Fabricate(:admin) }
 
-    it "enqueues a 'signup after approval' email if must_approve_users is true" do
+    it "creates a reviewable for the user if must_approve_users is true" do
       SiteSetting.must_approve_users = true
-      Jobs.expects(:enqueue).with(
-        :critical_user_email, has_entries(type: :signup_after_approval)
-      )
-      user.approve(admin)
+      user
+      expect(ReviewableUser.find_by(target: user)).to be_present
     end
 
-    it "doesn't enqueue a 'signup after approval' email if must_approve_users is false" do
-      SiteSetting.must_approve_users = false
-      Jobs.expects(:enqueue).never
-      user.approve(admin)
-    end
-
-    it 'triggers a extensibility event' do
-      user && admin # bypass the user_created event
-      event = DiscourseEvent.track_events { user.approve(admin) }.first
-
-      expect(event[:event_name]).to eq(:user_approved)
-      expect(event[:params].first).to eq(user)
-    end
-
-    context 'after approval' do
-      before do
-        user.approve(admin)
-      end
-
-      it 'marks the user as approved' do
-        expect(user).to be_approved
-      end
-
-      it 'has the admin as the approved by' do
-        expect(user.approved_by).to eq(admin)
-      end
-
-      it 'has a value for approved_at' do
-        expect(user.approved_at).to be_present
-      end
+    it "doesn't create a reviewable if must_approve_users is false" do
+      user
+      expect(ReviewableUser.find_by(target: user)).to be_blank
     end
   end
 

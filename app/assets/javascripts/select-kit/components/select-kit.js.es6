@@ -403,6 +403,8 @@ export default Ember.Component.extend(
     willSelect() {},
     didSelect() {},
 
+    didClearSelection() {},
+
     willCreate() {},
     didCreate() {},
 
@@ -463,6 +465,7 @@ export default Ember.Component.extend(
     clearSelection() {
       this.deselect(this.get("selection"));
       this.focusFilterOrHeader();
+      this.didClearSelection();
     },
 
     actions: {

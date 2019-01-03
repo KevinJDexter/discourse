@@ -67,6 +67,12 @@ export default createWidget("hamburger-menu", {
       }
     ];
 
+    links.push({
+      route: "review",
+      className: "review",
+      label: "review.title"
+    });
+
     if (currentUser.show_queued_posts) {
       links.push({
         route: "queued-posts",

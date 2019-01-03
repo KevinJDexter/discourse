@@ -113,6 +113,7 @@ class User < ActiveRecord::Base
   after_create :set_random_avatar
   after_create :ensure_in_trust_level_group
   after_create :set_default_categories_preferences
+  after_create :create_reviewable
 
   before_save :update_username_lower
   before_save :ensure_password_is_hashed
@@ -403,22 +404,21 @@ class User < ActiveRecord::Base
 
   # Approve this user
   def approve(approved_by, send_mail = true)
-    self.approved = true
+    Discourse.deprecate("User#approve is deprecated. Please use the Reviewable API instead.", output_in_test: true)
 
-    if approved_by.is_a?(Integer)
-      self.approved_by_id = approved_by
-    else
-      self.approved_by = approved_by
+    # Backwards compatibility - in case plugins or something is using the old API which accepted
+    # either a Number or object. Probably should remove at some point
+    approved_by = User.find_by(id: approved_by) if approved_by.is_a?(Numeric)
+
+    if reviewable_user = ReviewableUser.find_by(target: self)
+      result = reviewable_user.perform(approved_by, :approve, send_email: send_mail)
+      if result.success?
+        Reviewable.set_approved_fields!(self, approved_by)
+        return true
+      end
     end
 
-    self.approved_at = Time.zone.now
-
-    if result = save
-      send_approval_email if send_mail
-      DiscourseEvent.trigger(:user_approved, self)
-    end
-
-    result
+    false
   end
 
   def self.email_hash(email)
@@ -1213,6 +1213,13 @@ class User < ActiveRecord::Base
     Group.user_trust_level_change!(id, trust_level)
   end
 
+  def create_reviewable
+    return unless SiteSetting.must_approve_users? || SiteSetting.invite_only?
+    return if approved?
+
+    ReviewableUser.needs_review!(target: self, created_by: Discourse.system_user)
+  end
+
   def create_user_stat
     stat = UserStat.new(new_since: Time.now)
     stat.user_id = id
@@ -1285,15 +1292,6 @@ class User < ActiveRecord::Base
       if will_save_change_to_username? && existing.present? && !same_user
         errors.add(:username, I18n.t(:'user.username.unique'))
       end
-    end
-  end
-
-  def send_approval_email
-    if SiteSetting.must_approve_users
-      Jobs.enqueue(:critical_user_email,
-        type: :signup_after_approval,
-        user_id: id
-      )
     end
   end
 

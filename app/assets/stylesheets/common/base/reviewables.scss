@@ -1,0 +1,63 @@
+.reviewable-item {
+  margin-bottom: 1em;
+  border-bottom: 1px solid dark-light-choose($primary-low, $secondary-low);
+
+  .reviewable-meta-data {
+    color: dark-light-choose($primary-medium, $secondary-medium);
+    display: flex;
+    width: 100%;
+    margin-bottom: 0.5em;
+    font-size: $font-down-1;
+    align-items: center;
+    .reviewable-type {
+      margin-right: 1em;
+    }
+  }
+
+  .reviewable-contents {
+    display: flex;
+  }
+
+  .reviewable-actions {
+    margin-top: 0.5em;
+    display: flex;
+
+    .reviewable-action {
+      margin-right: 0.5em;
+    }
+  }
+  padding-bottom: 1em;
+}
+
+.reviewable-queued-post {
+  .post-title {
+    background-color: yellow;
+  }
+  .created-by {
+    margin-right: 1em;
+  }
+
+  .post-contents {
+    width: 100%;
+  }
+  .post-topic {
+    font-weight: bold;
+    color: $primary-medium;
+  }
+}
+
+.editable-fields {
+  width: 100%;
+  .editable-field {
+    input[type="text"] {
+      width: 100%;
+      margin-bottom: 0;
+    }
+
+    textarea {
+      width: 100%;
+      height: 10em;
+    }
+    margin-bottom: 0.5em;
+  }
+}

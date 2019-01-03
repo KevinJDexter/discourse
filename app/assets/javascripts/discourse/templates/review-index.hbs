@@ -1,0 +1,5 @@
+<div class='reviewables'>
+  {{#each reviewables as |r|}}
+    {{reviewable-item reviewable=r remove=(action "remove" r)}}
+  {{/each}}
+</div>

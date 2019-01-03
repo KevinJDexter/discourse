@@ -355,6 +355,19 @@ en:
         search: "Search for a Message by title:"
         placeholder: "type the message title here"
 
+    review:
+      title: "Needs Review"
+      topic: "Topic:"
+      edit: "Edit"
+      save: "Save"
+      cancel: "Cancel"
+      new_topic: "New Topic:"
+      types:
+        reviewable_queued_post:
+          title: 'New Post'
+        reviewable_user:
+          title: 'User'
+
     queue:
       topic: "Topic:"
       approve: "Approve"
@@ -3736,19 +3749,12 @@ en:
         nav:
           new: "New"
           active: "Active"
-          pending: "Pending"
           staff: "Staff"
           suspended: "Suspended"
           silenced: "Silenced"
           suspect: "Suspect"
           staged: "Staged"
         approved: "Approved?"
-        approved_selected:
-          one: "approve user"
-          other: "approve users ({{count}})"
-        reject_selected:
-          one: "reject user"
-          other: "reject users ({{count}})"
         titles:
           active: "Active Users"
           new: "New Users"
@@ -3765,12 +3771,6 @@ en:
           suspended: "Suspended Users"
           suspect: "Suspect Users"
           staged: "Staged Users"
-        reject_successful:
-          one: "Successfully rejected 1 user."
-          other: "Successfully rejected %{count} users."
-        reject_failures:
-          one: "Failed to reject 1 user."
-          other: "Failed to reject %{count} users."
         not_verified: "Not verified"
         check_email:
           title: "Reveal this user's email address"

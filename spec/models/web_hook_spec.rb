@@ -248,6 +248,8 @@ describe WebHook do
     end
 
     it 'should enqueue the right hooks for user events' do
+      SiteSetting.must_approve_users = true
+
       Fabricate(:user_web_hook, active: true)
 
       user
@@ -264,7 +266,7 @@ describe WebHook do
       payload = JSON.parse(job_args["payload"])
       expect(payload["id"]).to eq(admin.id)
 
-      user.approve(admin)
+      ReviewableUser.find_by(target: user).perform(admin, :approve)
       job_args = Jobs::EmitWebHookEvent.jobs.last["args"].first
 
       expect(job_args["event_name"]).to eq("user_approved")
