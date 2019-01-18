@@ -70,7 +70,7 @@ RSpec.describe Migration::ColumnDropper do
       expect(has_column?(table_name, 'email')).to eq(false)
     end
 
-    pending 'should prevent updates to the readonly column' do
+    it 'should prevent updates to the readonly column' do
       begin
         DB.exec <<~SQL
         UPDATE #{table_name}

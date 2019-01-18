@@ -5,16 +5,17 @@ class QueuedPostsController < ApplicationController
   before_action :ensure_staff
 
   def index
-    state = QueuedPost.states[(params[:state] || 'new').to_sym]
-    state ||= QueuedPost.states[:new]
+    Discourse.deprecate("QueuedPostController#index is deprecated. Please use the Reviewable API instead.")
 
-    @queued_posts = QueuedPost.visible.where(state: state).includes(:topic, :user).order(:created_at)
-    render_serialized(@queued_posts,
+    status = params[:state] || 'pending'
+    status = 'pending' if status == 'new'
+
+    reviewables = Reviewable.list_for(current_user, status: status.to_sym, type: 'ReviewableQueuedPost')
+    render_serialized(reviewables,
                       QueuedPostSerializer,
                       root: :queued_posts,
                       rest_serializer: true,
                       refresh_queued_posts: "/queued_posts?status=new")
-
   end
 
   def update

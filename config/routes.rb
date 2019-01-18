@@ -440,7 +440,6 @@ Discourse::Application.routes.draw do
     get "#{root_path}/:username/badges" => "users#badges", constraints: { username: RouteFormat.username }
     get "#{root_path}/:username/notifications" => "users#show", constraints: { username: RouteFormat.username }
     get "#{root_path}/:username/notifications/:filter" => "users#show", constraints: { username: RouteFormat.username }
-    get "#{root_path}/:username/activity/pending" => "users#show", constraints: { username: RouteFormat.username }
     delete "#{root_path}/:username" => "users#destroy", constraints: { username: RouteFormat.username, format: /(json|html)/ }
     get "#{root_path}/by-external/:external_id" => "users#show", constraints: { external_id: /[^\/]+/ }
     get "#{root_path}/:username/flagged-posts" => "users#show", constraints: { username: RouteFormat.username }

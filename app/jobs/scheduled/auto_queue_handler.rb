@@ -8,8 +8,6 @@ module Jobs
     def execute(args)
       return unless SiteSetting.auto_handle_queued_age.to_i > 0
 
-      guardian = Guardian.new(Discourse.system_user)
-
       # Flags
       flags = FlagQuery.flagged_post_actions(filter: 'active')
         .where('post_actions.created_at < ?', SiteSetting.auto_handle_queued_age.to_i.days.ago)
@@ -18,13 +16,11 @@ module Jobs
         PostAction.defer_flags!(post, Discourse.system_user)
       end
 
-      # Posts
-      queued_posts = QueuedPost.visible
-        .where(state: QueuedPost.states[:new])
+      Reviewable
+        .where(status: Reviewable.statuses[:pending])
         .where('created_at < ?', SiteSetting.auto_handle_queued_age.to_i.days.ago)
-
-      queued_posts.each do |queued_post|
-        queued_post.reject!(Discourse.system_user)
+        .each do |reviewable|
+        reviewable.perform(Discourse.system_user, :reject)
       end
     end
   end

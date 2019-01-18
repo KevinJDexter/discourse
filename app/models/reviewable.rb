@@ -2,8 +2,16 @@ require_dependency 'enum'
 require_dependency 'reviewable/actions'
 require_dependency 'reviewable/editable_fields'
 require_dependency 'reviewable/perform_result'
+require_dependency 'reviewable_serializer'
 
 class Reviewable < ActiveRecord::Base
+  class InvalidAction < StandardError
+    def initialize(action_id, klass)
+      @action_id, @klass = action_id, klass
+      super("Can't peform `#{action_id}` on #{self.class.name}")
+    end
+  end
+
   validates_presence_of :type, :status, :created_by_id
   belongs_to :target, polymorphic: true
   belongs_to :created_by, class_name: 'User'
@@ -15,6 +23,7 @@ class Reviewable < ActiveRecord::Base
   has_many :reviewable_histories
 
   after_create do
+    DiscourseEvent.trigger(:reviewable_created, self)
     log_history(:created, created_by)
   end
 
@@ -100,24 +109,34 @@ class Reviewable < ActiveRecord::Base
 
     # Ensure the user has access to the action
     actions = actions_for(Guardian.new(performed_by), args)
-    unless actions.has?(action_id)
-      raise Discourse::InvalidAccess.new("Can't peform `#{action_id}` on #{self.class.name}")
-    end
+    raise InvalidAction.new(action_id, self.class) unless actions.has?(action_id)
 
     perform_method = "perform_#{action_id}".to_sym
-    raise "Invalid reviewable action `#{action_id}` on #{self.class.name}" unless respond_to?(perform_method)
+    raise InvalidAction.new(action_id, self.class) unless respond_to?(perform_method)
 
     result = nil
     Reviewable.transaction do
       result = send(perform_method, performed_by, args)
 
       if result.success? && result.transition_to
-        self.status = Reviewable.statuses[result.transition_to]
-        save!
-        log_history(:transitioned, performed_by)
+        transition_to(result.transition_to, performed_by)
       end
     end
     result
+  end
+
+  def transition_to(status_symbol, performed_by)
+    self.status = Reviewable.statuses[status_symbol]
+    save!
+    log_history(:transitioned, performed_by)
+    DiscourseEvent.trigger(:reviewable_transitioned_to, status_symbol, self)
+  end
+
+  def post_options
+    Discourse.deprecate(
+      "Reviewable#post_options is deprecated. Please use #payload instead.",
+      output_in_test: true
+    )
   end
 
   def self.bulk_perform_targets(performed_by, action, type, target_ids, args = nil)
@@ -139,9 +158,27 @@ class Reviewable < ActiveRecord::Base
     )
   end
 
-  def self.list_for(user, status: :pending)
+  def self.list_for(user, status: :pending, type: nil)
     return [] if user.blank?
-    viewable_by(user).where(status: statuses[status])
+    result = viewable_by(user).where(status: statuses[status])
+    result = result.where(type: type) if type
+    result
+  end
+
+  def serializer
+    self.class.serializer_for(self)
+  end
+
+  def self.lookup_serializer_for(type)
+    "#{type}Serializer".constantize
+  rescue NameError
+    ReviewableSerializer
+  end
+
+  def self.serializer_for(reviewable)
+    type = reviewable.type
+    @@serializers ||= {}
+    @@serializers[type] ||= lookup_serializer_for(type)
   end
 
 end

@@ -54,7 +54,7 @@ describe Migration::TableDropper do
       expect(table_exists?(table_name)).to eq(false)
     end
 
-    pending 'should prevent insertions to the table' do
+    it 'should prevent insertions to the table' do
       begin
         DB.exec <<~SQL
           INSERT INTO #{table_name} (topic_id) VALUES (2)

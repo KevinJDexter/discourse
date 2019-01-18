@@ -2,13 +2,16 @@ class Reviewable < ActiveRecord::Base
   class PerformResult
     include ActiveModel::Serialization
 
-    attr_reader :status, :transition_to
+    attr_reader :status, :transition_to, :post, :topic
 
-    def initialize(status, args = nil)
-      args ||= {}
+    def initialize(status, transition_to: nil, post: nil)
+      @status = status
+      @transition_to = transition_to
 
-      @status, @args = status
-      @transition_to = args[:transition_to]
+      if post
+        @post = post
+        @topic = post.topic
+      end
     end
 
     def success?

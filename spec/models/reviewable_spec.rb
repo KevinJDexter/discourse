@@ -167,7 +167,24 @@ RSpec.describe Reviewable, type: :model do
         expect(reviewable.update_fields(nil, moderator)).to eq(true)
         expect(reviewable.update_fields({}, moderator)).to eq(true)
       end
+    end
+  end
 
+  context "events" do
+    let!(:moderator) { Fabricate(:moderator) }
+    let(:reviewable) { Fabricate(:reviewable) }
+
+    it "triggers events on create, transition_to" do
+      event = DiscourseEvent.track(:reviewable_created) { reviewable.save! }
+      expect(event).to be_present
+      expect(event[:params].first).to eq(reviewable)
+
+      event = DiscourseEvent.track(:reviewable_transitioned_to) do
+        reviewable.transition_to(:approved, moderator)
+      end
+      expect(event).to be_present
+      expect(event[:params][0]).to eq(:approved)
+      expect(event[:params][1]).to eq(reviewable)
     end
   end
 

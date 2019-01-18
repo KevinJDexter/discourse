@@ -8,8 +8,7 @@ class ReviewablesController < ApplicationController
     hash = {}
     json = {
       reviewables: reviewables.map do |r|
-        serializer = serializer_for(r)
-        result = serializer.new(r, root: nil, hash: hash, scope: guardian).as_json
+        result = r.serializer.new(r, root: nil, hash: hash, scope: guardian).as_json
         hash[:reviewable_actions].uniq!
         result
       end,
@@ -58,19 +57,4 @@ class ReviewablesController < ApplicationController
 
     render_serialized(result, ReviewablePerformResultSerializer)
   end
-
-protected
-
-  def lookup_serializer_for(type)
-    "#{type}Serializer".constantize
-  rescue NameError
-    ReviewableSerializer
-  end
-
-  def serializer_for(reviewable)
-    type = reviewable.type
-    @serializers ||= {}
-    @serializers[type] ||= lookup_serializer_for(type)
-  end
-
 end

@@ -23,22 +23,28 @@ describe Jobs::AutoQueueHandler do
     end
   end
 
-  context "old queued post" do
-    let!(:old) { Fabricate(:queued_post, created_at: 61.days.ago, queue: 'default') }
-    let!(:not_old) { Fabricate(:queued_post, created_at: 59.days.ago, queue: 'default') }
+  context "reviewables" do
+    let!(:new_post) { Fabricate(:reviewable_queued_post, created_at: 59.days.ago) }
+    let!(:old_post) { Fabricate(:reviewable_queued_post, created_at: 61.days.ago) }
+    let!(:new_user) { Fabricate(:reviewable, created_at: 10.days.ago) }
+    let!(:old_user) { Fabricate(:reviewable, created_at: 80.days.ago) }
 
     it "rejects the post when auto_handle_queued_age is 60" do
       SiteSetting.auto_handle_queued_age = 60
       subject
-      expect(not_old.reload.state).to eq(QueuedPost.states[:new])
-      expect(old.reload.state).to eq(QueuedPost.states[:rejected])
+      expect(new_post.reload.pending?).to eq(true)
+      expect(old_post.reload.rejected?).to eq(true)
+      expect(new_user.reload.pending?).to eq(true)
+      expect(old_user.reload.rejected?).to eq(true)
     end
 
-    it "doesn't reject the post when auto_handle_queued_age is 0" do
+    it "leaves reviewables as pending auto_handle_queued_age is 0" do
       SiteSetting.auto_handle_queued_age = 0
       subject
-      expect(not_old.reload.state).to eq(QueuedPost.states[:new])
-      expect(old.reload.state).to eq(QueuedPost.states[:new])
+      expect(new_post.reload.pending?).to eq(true)
+      expect(new_user.reload.pending?).to eq(true)
+      expect(old_post.reload.pending?).to eq(true)
+      expect(old_user.reload.pending?).to eq(true)
     end
   end
 

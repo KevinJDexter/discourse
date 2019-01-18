@@ -7,32 +7,8 @@ class QueuedPost < ActiveRecord::Base
   belongs_to :approved_by, class_name: "User"
   belongs_to :rejected_by, class_name: "User"
 
-  after_commit :trigger_queued_post_event, on: :create
-
-  def create_pending_action
-    UserAction.log_action!(action_type: UserAction::PENDING,
-                           user_id: user_id,
-                           acting_user_id: user_id,
-                           target_topic_id: topic_id,
-                           queued_post_id: id)
-  end
-
-  def trigger_queued_post_event
-    DiscourseEvent.trigger(:queued_post_created, self)
-    true
-  end
-
   def self.states
     @states ||= Enum.new(:new, :approved, :rejected)
-  end
-
-  # By default queues are hidden from moderators
-  def self.visible_queues
-    @visible_queues ||= Set.new(['default'])
-  end
-
-  def self.visible
-    where(queue: visible_queues.to_a)
   end
 
   def self.new_posts
@@ -40,11 +16,7 @@ class QueuedPost < ActiveRecord::Base
   end
 
   def self.new_count
-    new_posts.visible.count
-  end
-
-  def visible?
-    QueuedPost.visible_queues.include?(queue)
+    new_posts.count
   end
 
   def self.broadcast_new!
@@ -55,7 +27,6 @@ class QueuedPost < ActiveRecord::Base
   def reject!(rejected_by)
     change_to!(:rejected, rejected_by)
     StaffActionLogger.new(rejected_by).log_post_rejected(self)
-    DiscourseEvent.trigger(:rejected_post, self)
   end
 
   def create_options
@@ -95,7 +66,6 @@ class QueuedPost < ActiveRecord::Base
     creator.enqueue_jobs
     creator.trigger_after_events
 
-    DiscourseEvent.trigger(:approved_post, self, created_post)
     created_post
   end
 
@@ -122,7 +92,7 @@ class QueuedPost < ActiveRecord::Base
     updates.each { |k, v| send("#{k}=", v) }
     changes_applied
 
-    QueuedPost.broadcast_new! if visible?
+    QueuedPost.broadcast_new! 
   end
 
 end

@@ -783,10 +783,10 @@ describe PostsController do
           user.reload
           expect(user).to be_silenced
 
-          qp = QueuedPost.first
+          rp = ReviewableQueuedPost.first
 
           mod = Fabricate(:moderator)
-          qp.approve!(mod)
+          rp.perform(mod, :approve)
 
           user.reload
           expect(user).not_to be_silenced

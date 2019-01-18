@@ -19,7 +19,8 @@ Fabricator(:reviewable_queued_post_topic, class_name: :reviewable_queued_post) d
     {
       raw: "hello world post contents.",
       title: "queued post title",
-      extra: "some extra data"
+      extra: "some extra data",
+      archetype: 'regular'
     }
   }
 end
@@ -31,7 +32,15 @@ Fabricator(:reviewable_queued_post) do
   topic
   payload {
     {
-      raw: "hello world post contents."
+      raw: "hello world post contents.",
+      reply_to_post_number: 1,
+      via_email: true,
+      raw_email: 'store_me',
+      auto_track: true,
+      custom_fields: { hello: 'world' },
+      cooking_options: { cat: 'hat' },
+      cook_method: Post.cook_methods[:raw_html],
+      image_sizes: { "http://foo.bar/image.png" => { "width" => 0, "height" => 222 } }
     }
   }
 end

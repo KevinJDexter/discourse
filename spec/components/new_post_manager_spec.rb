@@ -242,19 +242,23 @@ describe NewPostManager do
     end
 
     it "calls custom enqueuing handlers" do
-      manager = NewPostManager.new(topic.user, raw: 'to the handler I say enqueue me!', title: 'this is the title of the queued post')
+      manager = NewPostManager.new(
+        topic.user,
+        raw: 'to the handler I say enqueue me!',
+        title: 'this is the title of the queued post'
+      )
 
       result = manager.perform
 
-      enqueued = result.queued_post
+      reviewable = result.reviewable
 
-      expect(enqueued).to be_present
-      expect(enqueued.post_options['title']).to eq('this is the title of the queued post')
+      expect(reviewable).to be_present
+      expect(reviewable.payload['title']).to eq('this is the title of the queued post')
       expect(result.action).to eq(:enqueued)
       expect(result).to be_success
       expect(result.pending_count).to eq(1)
       expect(result.post).to be_blank
-      expect(QueuedPost.new_count).to eq(1)
+      expect(Reviewable.list_for(Discourse.system_user).count).to eq(1)
       expect(@counter).to be(0)
     end
 
